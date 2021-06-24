@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func Start()  {
+func Start() {
 
 	//sanityCheck()
 
@@ -26,12 +26,29 @@ func Start()  {
 	ch := CustomerHandlers{service.NewCustomerService(customerRepositoryDB)}
 	ah := AccountHandler{service.NewAccountService(accountRepositoryDB)}
 
-	router.HandleFunc("/customers", ch.getAllCustomers).Methods(http.MethodGet)
-	router.HandleFunc("/customers/{id:[0-9]+}", ch.getCustomer).Methods(http.MethodGet)
-	router.HandleFunc("/customers/{id:[0-9]+}/account", ah.NewAccount).Methods(http.MethodPost)
+	router.
+		HandleFunc("/customers", ch.getAllCustomers).
+		Methods(http.MethodGet).
+		Name("GetAllCustomers")
+
+	router.
+		HandleFunc("/customers/{id:[0-9]+}", ch.getCustomer).
+		Methods(http.MethodGet).
+		Name("GetCustomer")
+
+	router.
+		HandleFunc("/customers/{id:[0-9]+}/account", ah.NewAccount).
+		Methods(http.MethodPost).
+		Name("NewAccount")
+
 	router.
 		HandleFunc("/customers/{id:[0-9]+}/account/{account_id:[0-9]+}", ah.NewTransaction).
-		Methods(http.MethodPost)
+		Methods(http.MethodPost).
+		Name("NewTransaction")
+
+	am := AuthMiddleware{domain.NewAuthRepository()}
+	router.Use(am.authorizationHandler())
+
 	//router.HandleFunc("/customers", createCustomer).Methods(http.MethodPost)
 	//router.HandleFunc("/customers/{id:[0-9]+}", getCustomer).Methods(http.MethodGet)
 
