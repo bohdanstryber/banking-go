@@ -9,7 +9,7 @@ services:
       - ./initdb:/docker-entrypoint-initdb.d
     container_name: mysql
     environment:
-      MYSQL_ROOT_PASSWORD: codecamp
+      MYSQL_ROOT_PASSWORD: root
       TZ: Asia/Kolkata
 
 volumes:

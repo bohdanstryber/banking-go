@@ -1,23 +1,26 @@
 package app
 
 import (
+	"fmt"
+	"github.com/bohdanstryber/banking-go/config"
 	"github.com/bohdanstryber/banking-go/domain"
 	"github.com/bohdanstryber/banking-go/service"
 	"github.com/gorilla/mux"
+	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/jmoiron/sqlx"
-	"log"
 	"net/http"
-	"os"
 	"time"
 )
 
-func Start() {
+var cnfg config.Config
 
-	//sanityCheck()
+func Start() {
+	err := cleanenv.ReadConfig(".env", &cnfg)
+	if err != nil {
+		panic("Config file is not defined")
+	}
 
 	router := mux.NewRouter()
-
-	//ch := CustomerHandlers{service.NewCustomerService(domain.NewCustomerRepositoryStub())}
 
 	dbClient := getDbClient()
 
@@ -49,25 +52,18 @@ func Start() {
 	am := AuthMiddleware{domain.NewAuthRepository()}
 	router.Use(am.authorizationHandler())
 
-	//router.HandleFunc("/customers", createCustomer).Methods(http.MethodPost)
-	//router.HandleFunc("/customers/{id:[0-9]+}", getCustomer).Methods(http.MethodGet)
-
-	//address := os.Getenv("SERVER_ADDRESS")
-	//port := os.Getenv("SERVER_PORT")
-	http.ListenAndServe("localhost:8000", router)
+	http.ListenAndServe(cnfg.AppUrl, router)
 }
 
 func getDbClient() *sqlx.DB {
-	//dbUser := os.Getenv("DB_USER")
-	//dbPassword := os.Getenv("DB_PASSWORD")
-	//dbAddress := os.Getenv("DB_ADDRESS")
-	//dbPort := os.Getenv("DB_PORT")
-	//dbName := os.Getenv("DB_NAME")
+	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
+		cnfg.DbUser,
+		cnfg.DbPassword,
+		cnfg.DbAddress,
+		cnfg.DbPort,
+		cnfg.DbName)
+	client, err := sqlx.Open("mysql", dataSource)
 
-	//dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPassword, dbAddress, dbPort, dbName)
-	//client, err := sqlx.Open("mysql", dataSource)
-	client, err := sqlx.Open("mysql", "root:codecamp@tcp(localhost:3306)/banking")
-	//client, err := sqlx.Open("mysql", "root:codecamp@tcp(localhost:3306)/banking")
 	if err != nil {
 		panic(err)
 	}
@@ -77,11 +73,4 @@ func getDbClient() *sqlx.DB {
 	client.SetMaxIdleConns(10)
 
 	return client
-}
-
-func sanityCheck() {
-	if os.Getenv("SERVER_ADDRESS") == "" ||
-		os.Getenv("SERVER_PORT") == "" {
-		log.Fatal("Env var not defined")
-	}
 }
